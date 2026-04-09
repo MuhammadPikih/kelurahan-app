@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================
+   ANIMASI KUSTOM
+   Animasi ini dibuat dengan @keyframes CSS.
+   Kita definisikan gerakan dari awal ke akhir,
+   lalu dipanggil lewat class Tailwind di bawah.
+   ============================================= */
+
+/* Fade + geser dari bawah ke atas */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;           /* mulai transparan */
+    transform: translateY(20px); /* mulai dari 20px di bawah posisi asli */
+  }
+  to {
+    opacity: 1;           /* akhir terlihat penuh */
+    transform: translateY(0);    /* kembali ke posisi normal */
+  }
+}
+
+/* Fade masuk biasa (tanpa gerak) */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Muncul dari kiri */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px); /* mulai dari kiri */
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Efek denyut / pulse lembut untuk loading */
+@keyframes softPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Animasi spin untuk ikon loading */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================
+   CLASS UTILITY ANIMASI
+   Kita buat class sendiri supaya bisa dipakai
+   langsung di JSX seperti className="animate-fadeInUp"
+   ============================================= */
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.4s ease both;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease both;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.35s ease both;
+}
+
+.animate-softPulse {
+  animation: softPulse 1.5s ease-in-out infinite;
+}
+
+/* =============================================
+   DELAY ANIMASI
+   Dipakai untuk membuat efek "stagger" —
+   setiap kartu/baris muncul satu per satu
+   dengan jeda waktu berbeda.
+   Contoh: delay-100 = tunggu 100ms dulu baru animasi
+   ============================================= */
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+
+/* =============================================
+   EFEK HOVER KARTU
+   Saat mouse masuk ke kartu, kartu naik sedikit
+   dan bayangan jadi lebih besar.
+   transition mengatur seberapa halus gerakannya.
+   ============================================= */
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);       /* naik 3px */
+  box-shadow: 0 8px 25px rgba(0,0,0,0.12); /* bayangan lebih besar */
+}
+
+/* =============================================
+   EFEK RIPPLE PADA TOMBOL
+   Saat tombol diklik, ada efek lingkaran melebar
+   seperti gelombang air.
+   ============================================= */
+
+.btn-ripple {
+  position: relative;
+  overflow: hidden; /* sembunyikan bagian ripple yang keluar */
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.2);
+  transform: scale(0);
+  border-radius: 50%;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+}
+
+.btn-ripple:active::after {
+  transform: scale(2.5); /* melebar saat diklik */
+  opacity: 1;
+  transition: 0s; /* langsung muncul saat klik */
+}
+
+/* =============================================
+   ANIMASI BARIS TABEL
+   Setiap baris tabel muncul dengan fade + geser.
+   Class ini bisa dipakai langsung di <tr> atau <td>.
+   ============================================= */
+
+.table-row-animate {
+  animation: fadeInUp 0.3s ease both;
+}
+
+/* =============================================
+   ANIMASI SPIN
+   Dipakai untuk ikon loading (spinner).
+   Contoh: <span className="animate-spin" />
+   ============================================= */
+
+.animate-spin {
+  animation: spin 0.7s linear infinite;
+}
+
+/* =============================================
+   SKELETON LOADING
+   Efek "tulang" abu-abu bergerak saat data belum ada.
+   Ini lebih menarik daripada teks "Loading..."
+   ============================================= */
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

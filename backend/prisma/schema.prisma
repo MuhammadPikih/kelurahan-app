@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  // Role menentukan hak akses: admin | staff | warga
+  // - admin : akses penuh (kelola user, data, surat)
+  // - staff : kelola data penduduk & surat, tidak bisa kelola user
+  // - warga : hanya lihat data sendiri (untuk fitur berikutnya)
+  role      String   @default("staff")
+  nama      String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model Penduduk {
+  id          Int      @id @default(autoincrement())
+  nik         String   @unique
+  nama        String
+  tempatLahir String
+  tanggalLahir DateTime
+  jenisKelamin String
+  agama       String
+  statusKawin String
+  pekerjaan   String
+  alamat      String
+  rt          String
+  rw          String
+  kelurahan   String   @default("Kelurahan Contoh")
+  kecamatan   String   @default("Kecamatan Contoh")
+  kota        String   @default("Kota Contoh")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  surats      Surat[]
+}
+
+model Surat {
+  id          Int      @id @default(autoincrement())
+  nomorSurat  String   @unique
+  jenisSurat  String
+  keperluan   String
+  status      String   @default("pending")
+  // userId diisi saat warga mengajukan surat sendiri (opsional)
+  userId      Int?
+  pendudukId  Int
+  penduduk    Penduduk @relation(fields: [pendudukId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Model Pengaduan — laporan masalah dari warga
+// Kategori: jalan_rusak | sampah | lampu_mati | lainnya
+// Status  : menunggu | diproses | selesai
+model Pengaduan {
+  id        Int      @id @default(autoincrement())
+  judul     String
+  isi       String
+  kategori  String   @default("lainnya")
+  status    String   @default("menunggu")
+  userId    Int
+  // nama & alamat disimpan langsung agar mudah ditampilkan tanpa join
+  namaWarga String   @default("")
+  alamat    String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

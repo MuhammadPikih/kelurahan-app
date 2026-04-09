@@ -1,0 +1,22 @@
+# Dependency folders — jangan di-upload, ukurannya bisa ratusan MB
+node_modules/
+
+# Environment variables — berisi password/secret, JANGAN pernah di-upload
+.env
+.env.local
+.env.production
+
+# File database SQLite — data lokal, tidak perlu di-upload
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# Hasil build — bisa di-generate ulang kapan saja
+dist/
+build/
+
+# File sistem macOS — tidak relevan untuk project
+.DS_Store
+
+# Log files
+*.log
+npm-debug.log*
