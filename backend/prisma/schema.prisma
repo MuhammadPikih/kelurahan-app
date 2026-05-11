@@ -65,9 +65,11 @@ model Pengaduan {
   kategori  String   @default("lainnya")
   status    String   @default("menunggu")
   userId    Int
-  // nama & alamat disimpan langsung agar mudah ditampilkan tanpa join
   namaWarga String   @default("")
   alamat    String   @default("")
+  // foto disimpan sebagai nama file, diakses via /uploads/namafile.jpg
+  // null berarti tidak ada foto yang dilampirkan
+  foto      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

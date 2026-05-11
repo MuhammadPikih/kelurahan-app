@@ -10,6 +10,9 @@ node_modules/
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
 
+# Folder upload foto pengaduan — data lokal
+backend/uploads/
+
 # Hasil build — bisa di-generate ulang kapan saja
 dist/
 build/

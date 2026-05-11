@@ -24,11 +24,6 @@ const STATUS_CONFIG = {
 
 const emptyForm = { judul: '', isi: '', kategori: 'jalan_rusak', namaWarga: '', alamat: '' }
 
-// Ambil data user dari localStorage
-const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
-const isWarga = currentUser.role === 'warga'
-const isStaff = currentUser.role === 'admin' || currentUser.role === 'staff'
-
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || { cls: 'bg-gray-100 text-gray-600', icon: '❓', label: status }
   return (
@@ -48,10 +43,19 @@ function KategoriBadge({ kategori }) {
 }
 
 /*
-  Komponen kartu pengaduan — tampilan card untuk warga.
-  Admin/staff melihat tabel, warga melihat kartu.
+  Komponen kartu pengaduan.
+  Props:
+  - item           : data satu pengaduan
+  - index          : urutan untuk delay animasi
+  - userRole       : role user yang sedang login (dibaca saat render, bukan saat load)
+  - onUpdateStatus : fungsi ubah status
+  - onDelete       : fungsi hapus
 */
-function PengaduanCard({ item, index, onUpdateStatus, onDelete }) {
+function PengaduanCard({ item, index, userRole, onUpdateStatus, onDelete }) {
+  const isStaff = userRole === 'admin' || userRole === 'staff'
+  // State untuk lightbox — tampilkan foto fullscreen saat diklik
+  const [showFoto, setShowFoto] = React.useState(false)
+
   return (
     <div
       className="bg-white rounded-xl shadow p-5 card-hover animate-fadeInUp border-l-4 border-yellow-400"
@@ -65,6 +69,24 @@ function PengaduanCard({ item, index, onUpdateStatus, onDelete }) {
           </div>
           <h3 className="font-semibold text-gray-800 mt-2">{item.judul}</h3>
           <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.isi}</p>
+
+          {/*
+            Tampilkan thumbnail foto kalau ada.
+            Klik thumbnail = buka lightbox fullscreen.
+            URL foto: /uploads/namafile.jpg (diproxy Vite ke backend)
+          */}
+          {item.foto && (
+            <div className="mt-3">
+              <img
+                src={`/uploads/${item.foto}`}
+                alt="Bukti foto"
+                onClick={() => setShowFoto(true)}
+                className="h-24 w-36 object-cover rounded-lg border cursor-pointer hover:opacity-90 hover:scale-[1.02] transition-all duration-150"
+              />
+              <p className="text-xs text-gray-400 mt-1">🖼️ Klik foto untuk perbesar</p>
+            </div>
+          )}
+
           <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
             {item.namaWarga && <span>👤 {item.namaWarga}</span>}
             {item.alamat && <span>📍 {item.alamat}</span>}
@@ -72,7 +94,7 @@ function PengaduanCard({ item, index, onUpdateStatus, onDelete }) {
           </div>
         </div>
 
-        {/* Tombol aksi hanya untuk admin & staff */}
+        {/* Tombol aksi — hanya tampil untuk admin & staff */}
         {isStaff && (
           <div className="flex flex-col gap-2 flex-shrink-0">
             {item.status === 'menunggu' && (
@@ -91,15 +113,43 @@ function PengaduanCard({ item, index, onUpdateStatus, onDelete }) {
                 ✅ Selesai
               </button>
             )}
-            <button
-              onClick={() => onDelete(item.id)}
-              className="text-xs px-2.5 py-1 rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition-all duration-150"
-            >
-              🗑️ Hapus
-            </button>
+            {item.status === 'selesai' && (
+              <button
+                onClick={() => onDelete(item.id)}
+                className="text-xs px-2.5 py-1 rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition-all duration-150 whitespace-nowrap"
+              >
+                🗑️ Hapus
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      {/*
+        Lightbox — overlay gelap dengan foto ukuran penuh.
+        Klik di mana saja untuk menutup.
+      */}
+      {showFoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setShowFoto(false)}
+        >
+          <div className="relative max-w-3xl w-full">
+            <img
+              src={`/uploads/${item.foto}`}
+              alt="Bukti foto"
+              className="w-full max-h-[80vh] object-contain rounded-xl shadow-2xl"
+            />
+            <button
+              onClick={() => setShowFoto(false)}
+              className="absolute top-2 right-2 bg-white text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-sm hover:bg-gray-100 transition-colors"
+            >
+              ✕
+            </button>
+            <p className="text-center text-white text-xs mt-2 opacity-60">Klik di mana saja untuk menutup</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -112,8 +162,15 @@ export default function Pengaduan() {
   const [filterStatus, setFilterStatus] = useState('')
   const [modal, setModal]       = useState(false)
   const [form, setForm]         = useState(emptyForm)
+  const [fotoFile, setFotoFile] = useState(null)   // menyimpan objek File dari input
+  const [fotoPreview, setFotoPreview] = useState(null) // URL preview sebelum upload
   const [loading, setLoading]   = useState(false)
   const [fetching, setFetching] = useState(true)
+
+  // Dibaca saat render agar selalu up-to-date dengan sesi login
+  const user     = JSON.parse(localStorage.getItem('user') || '{}')
+  const userRole = user.role || ''
+  const isWarga  = userRole === 'warga'
 
   const fetchData = useCallback(async () => {
     setFetching(true)
@@ -133,15 +190,46 @@ export default function Pengaduan() {
     e.preventDefault()
     setLoading(true)
     try {
-      await api.post('/pengaduan', form)
+      /*
+        Karena ada file upload, kita pakai FormData bukan JSON biasa.
+        FormData bisa menampung teks + file sekaligus.
+        Axios otomatis set Content-Type: multipart/form-data saat kirim FormData.
+      */
+      const fd = new FormData()
+      fd.append('judul',     form.judul)
+      fd.append('isi',       form.isi)
+      fd.append('kategori',  form.kategori)
+      fd.append('namaWarga', form.namaWarga)
+      fd.append('alamat',    form.alamat)
+      // Hanya append foto kalau user memilih file
+      if (fotoFile) fd.append('foto', fotoFile)
+
+      await api.post('/pengaduan', fd)
       setModal(false)
       setForm(emptyForm)
+      setFotoFile(null)
+      setFotoPreview(null)
       fetchData()
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal mengirim pengaduan')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Fungsi handle saat user memilih file foto
+  function handleFotoChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setFotoFile(file)
+    // Buat URL preview lokal menggunakan URL.createObjectURL
+    // Ini menampilkan gambar sebelum diupload ke server
+    setFotoPreview(URL.createObjectURL(file))
+  }
+
+  function handleRemoveFoto() {
+    setFotoFile(null)
+    setFotoPreview(null)
   }
 
   async function handleUpdateStatus(id, status) {
@@ -231,6 +319,7 @@ export default function Pengaduan() {
             key={item.id}
             item={item}
             index={i}
+            userRole={userRole}
             onUpdateStatus={handleUpdateStatus}
             onDelete={handleDelete}
           />
@@ -327,6 +416,50 @@ export default function Pengaduan() {
                 onChange={e => setForm({ ...form, isi: e.target.value })}
                 required
               />
+            </div>
+
+            {/*
+              Input foto bukti — opsional.
+              Menampilkan preview gambar sebelum dikirim
+              agar user bisa memastikan foto yang dipilih sudah benar.
+            */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Foto Bukti <span className="text-gray-400 font-normal">(opsional, maks 5MB)</span>
+              </label>
+
+              {/* Tampilkan preview kalau sudah pilih foto */}
+              {fotoPreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={fotoPreview}
+                    alt="Preview"
+                    className="h-32 w-48 object-cover rounded-lg border"
+                  />
+                  {/* Tombol X untuk hapus foto yang dipilih */}
+                  <button
+                    type="button"
+                    onClick={handleRemoveFoto}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                  >
+                    ✕
+                  </button>
+                  <p className="text-xs text-gray-400 mt-1">{fotoFile?.name}</p>
+                </div>
+              ) : (
+                /* Area upload — klik untuk pilih file */
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-yellow-400 hover:bg-yellow-50 transition-all duration-150">
+                  <span className="text-2xl">📷</span>
+                  <span className="text-xs text-gray-500 mt-1">Klik untuk pilih foto</span>
+                  <span className="text-xs text-gray-400">JPG, PNG, WEBP (maks 5MB)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFotoChange}
+                  />
+                </label>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-2 border-t">

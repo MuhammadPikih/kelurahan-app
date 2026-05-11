@@ -13,6 +13,16 @@ const PORT = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
+/*
+  Serve folder uploads sebagai static files.
+  Artinya file di backend/uploads/foto.jpg
+  bisa diakses via URL: http://localhost:5000/uploads/foto.jpg
+  
+  Frontend tinggal pakai: <img src="/uploads/namafile.jpg" />
+  (karena Vite proxy /api ke backend, tapi /uploads juga perlu diproxy)
+*/
+app.use('/uploads', express.static('uploads'))
+
 app.use('/api/auth', authRoutes)
 app.use('/api/penduduk', pendudukRoutes)
 app.use('/api/surat', suratRoutes)
