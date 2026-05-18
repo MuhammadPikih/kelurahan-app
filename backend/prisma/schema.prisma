@@ -55,7 +55,23 @@ model Surat {
   updatedAt   DateTime @updatedAt
 }
 
-// Model Pengaduan — laporan masalah dari warga
+// Model Berita — info/pengumuman seputar desa
+// Kategori: pengumuman | bansos | kesehatan | kegiatan | lainnya
+// Ditulis oleh admin atau staff
+model Berita {
+  id        Int      @id @default(autoincrement())
+  judul     String
+  isi       String
+  kategori  String   @default("pengumuman")
+  // foto sampul opsional, disimpan sebagai nama file
+  foto      String?
+  // penulis disimpan langsung agar tetap tampil meski user dihapus
+  penulisId Int
+  penulis   String   @default("")
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 // Kategori: jalan_rusak | sampah | lampu_mati | lainnya
 // Status  : menunggu | diproses | selesai
 model Pengaduan {

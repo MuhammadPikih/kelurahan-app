@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 
 // Warna untuk chart — dipakai di PieChart
 const COLORS = ['#16a34a', '#4ade80']
+
+// Konfigurasi badge kategori berita — sama dengan di Berita.jsx
+const KATEGORI_CONFIG = {
+  pengumuman: { icon: '📢', label: 'Pengumuman',  cls: 'bg-blue-100 text-blue-700'    },
+  bansos:     { icon: '🤝', label: 'Bansos',      cls: 'bg-green-100 text-green-700'  },
+  kesehatan:  { icon: '🏥', label: 'Kesehatan',   cls: 'bg-red-100 text-red-700'      },
+  kegiatan:   { icon: '🎉', label: 'Kegiatan',    cls: 'bg-purple-100 text-purple-700'},
+  lainnya:    { icon: '📌', label: 'Lainnya',     cls: 'bg-gray-100 text-gray-600'    },
+}
 
 /*
   Komponen StatCard: kartu statistik kecil di bagian atas dashboard.
@@ -57,12 +67,20 @@ function SkeletonCard() {
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(null)
+  const [stats, setStats]   = useState(null)
+  const [berita, setBerita] = useState([])
+  const navigate = useNavigate()
 
   useEffect(() => {
-    // Ambil data statistik dari API saat komponen pertama kali dimuat
-    api.get('/dashboard/stats').then(r => setStats(r.data)).catch(console.error)
-  }, []) // [] = hanya jalan sekali saat mount
+    // Ambil statistik dan 3 berita terbaru secara paralel
+    Promise.all([
+      api.get('/dashboard/stats'),
+      api.get('/berita', { params: { limit: 3 } })
+    ]).then(([statsRes, beritaRes]) => {
+      setStats(statsRes.data)
+      setBerita(beritaRes.data.data)
+    }).catch(console.error)
+  }, [])
 
   /*
     Tampilkan skeleton loading saat data belum ada.
@@ -155,6 +173,66 @@ export default function Dashboard() {
             </ResponsiveContainer>
           )}
         </div>
+      </div>
+
+      {/* ===== SECTION BERITA TERBARU ===== */}
+      <div className="animate-fadeInUp delay-400">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-gray-700">📰 Info & Berita Terbaru</h2>
+          {/* Tombol lihat semua mengarah ke halaman Berita */}
+          <button
+            onClick={() => navigate('/berita')}
+            className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
+          >
+            Lihat semua →
+          </button>
+        </div>
+
+        {berita.length === 0 ? (
+          <div className="bg-white rounded-xl shadow p-8 text-center text-gray-400">
+            <span className="text-3xl block mb-2">📭</span>
+            <p className="text-sm">Belum ada berita atau pengumuman</p>
+          </div>
+        ) : (
+          /*
+            Grid berita di dashboard — 3 kartu sejajar.
+            Lebih ringkas dari halaman Berita penuh.
+          */
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {berita.map((item, i) => {
+              const cfg = KATEGORI_CONFIG[item.kategori] || KATEGORI_CONFIG.lainnya
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => navigate('/berita')}
+                  className="bg-white rounded-xl shadow overflow-hidden card-hover cursor-pointer animate-fadeInUp"
+                  style={{ animationDelay: `${(i + 5) * 80}ms` }}
+                >
+                  {/* Foto sampul kalau ada */}
+                  {item.foto && (
+                    <img src={`/uploads/${item.foto}`} alt={item.judul} className="w-full h-28 object-cover" />
+                  )}
+                  {/* Warna header kalau tidak ada foto */}
+                  {!item.foto && (
+                    <div className="w-full h-2 bg-gradient-to-r from-green-500 to-green-400" />
+                  )}
+                  <div className="p-3">
+                    <div className="flex items-center gap-1 mb-1">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>
+                        {cfg.icon} {cfg.label}
+                      </span>
+                      {item.pinned && <span className="text-xs text-orange-500">📌</span>}
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 line-clamp-2">{item.judul}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(item.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -11,6 +11,7 @@ const navItems = [
   { to: '/penduduk',     label: 'Data Penduduk',    icon: '👥',  roles: ['admin', 'staff'] },
   { to: '/surat',        label: 'Surat Keterangan', icon: '📄',  roles: ['admin', 'staff'] },
   { to: '/users',        label: 'Manajemen User',   icon: '🔐',  roles: ['admin'] },
+  { to: '/berita',       label: 'Info & Berita',    icon: '📰' }, // semua role
   { to: '/pengaduan',    label: 'Pengaduan',        icon: '📢' }, // semua role
   { to: '/ajukan-surat', label: 'Ajukan Surat',     icon: '📝',  roles: ['warga'] },
 ]

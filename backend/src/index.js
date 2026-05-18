@@ -6,6 +6,7 @@ import suratRoutes from './routes/surat.js'
 import dashboardRoutes from './routes/dashboard.js'
 import usersRoutes from './routes/users.js'
 import pengaduanRoutes from './routes/pengaduan.js'
+import beritaRoutes from './routes/berita.js'
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -29,5 +30,6 @@ app.use('/api/surat', suratRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/pengaduan', pengaduanRoutes)
+app.use('/api/berita', beritaRoutes)
 
 app.listen(PORT, () => console.log(`Server berjalan di http://localhost:${PORT}`))

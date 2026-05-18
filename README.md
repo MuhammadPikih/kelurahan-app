@@ -192,9 +192,10 @@ kelurahan-app/
 │   │       ├── users.js            ← CRUD user (admin only)
 │   │       ├── penduduk.js         ← CRUD data penduduk
 │   │       ├── surat.js            ← CRUD surat keterangan
-│   │       ├── pengaduan.js        ← CRUD pengaduan masyarakat
+│   │       ├── pengaduan.js        ← CRUD pengaduan masyarakat + upload foto
+│   │       ├── berita.js           ← CRUD berita/info desa + upload foto sampul
 │   │       └── dashboard.js        ← Statistik dashboard
-│   ├── uploads/                    ← Folder foto pengaduan (dibuat otomatis)
+│   ├── uploads/                    ← Folder foto pengaduan & berita (dibuat otomatis)
 │   └── package.json
 │
 ├── frontend/                       ← Aplikasi React (UI)
@@ -206,17 +207,18 @@ kelurahan-app/
 │   │   │   └── Modal.jsx           ← Komponen modal reusable
 │   │   ├── pages/
 │   │   │   ├── Login.jsx           ← Halaman login
-│   │   │   ├── Dashboard.jsx       ← Statistik & chart
+│   │   │   ├── Dashboard.jsx       ← Statistik, chart, & berita terbaru
 │   │   │   ├── Penduduk.jsx        ← Manajemen data penduduk
 │   │   │   ├── Surat.jsx           ← Manajemen surat (admin/staff)
 │   │   │   ├── Users.jsx           ← Manajemen user (admin only)
-│   │   │   ├── Pengaduan.jsx       ← Pengaduan masyarakat
-│   │   │   └── AjukanSurat.jsx     ← Ajukan surat (khusus warga)
+│   │   │   ├── Pengaduan.jsx       ← Pengaduan masyarakat + foto bukti
+│   │   │   ├── AjukanSurat.jsx     ← Ajukan surat (khusus warga)
+│   │   │   └── Berita.jsx          ← Info & berita desa (semua role baca)
 │   │   ├── App.jsx                 ← Routing utama + route guard
 │   │   ├── main.jsx                ← Entry point React
 │   │   └── index.css               ← Animasi & style kustom
 │   ├── index.html
-│   ├── vite.config.js              ← Konfigurasi Vite + proxy API
+│   ├── vite.config.js              ← Konfigurasi Vite + proxy API + proxy uploads
 │   ├── tailwind.config.js          ← Konfigurasi Tailwind CSS
 │   └── package.json
 │
@@ -347,19 +349,60 @@ Ubah jumlah data per halaman     → ubah nilai default limit di req.query
 ---
 
 ### `backend/src/routes/pengaduan.js`
-CRUD pengaduan masyarakat + upload foto.
+CRUD pengaduan masyarakat + upload foto bukti.
 
 ```
 Mau ubah apa?                      Caranya
 ────────────────────────────────────────────────────────────
-Tambah kategori baru             → tambah di KATEGORI array di Pengaduan.jsx
+Tambah kategori baru             → tambah di array KATEGORI di Pengaduan.jsx
 Izinkan warga hapus pengaduan sendiri → tambah kondisi di route DELETE
 Tambah notifikasi email          → tambah logika kirim email setelah POST
 ```
 
 ---
 
-### `frontend/src/api/axios.js`
+### `backend/src/routes/berita.js` ⭐ baru
+CRUD berita/info desa — **admin & staff bisa tulis, semua role bisa baca**.
+
+```
+Mau ubah apa?                      Caranya
+────────────────────────────────────────────────────────────
+Tambah kategori berita baru      → tambah di KATEGORI_CONFIG di Berita.jsx
+Izinkan warga tulis berita       → ubah authorize('admin','staff') → hapus authorize
+Ubah jumlah berita per halaman   → ubah limit: 9 di fetchData Berita.jsx
+Nonaktifkan fitur pin            → hapus field pinned dari form dan schema
+```
+
+---
+
+### `frontend/src/pages/Pengaduan.jsx`
+Halaman pengaduan masyarakat — laporan masalah lingkungan dengan foto bukti.
+
+```
+Mau ubah apa?                      Caranya
+────────────────────────────────────────────────────────────
+Tambah kategori baru             → tambah objek di array KATEGORI[]
+Ubah alur status                 → ubah kondisi di komponen PengaduanCard
+Izinkan hapus semua status       → hapus kondisi item.status === 'selesai' di tombol hapus
+Ubah batas ukuran foto           → ubah di upload.js (backend)
+```
+
+---
+
+### `frontend/src/pages/Berita.jsx` ⭐ baru
+Halaman info & berita desa — grid kartu berita dengan foto sampul, filter kategori, pin berita.
+
+```
+Mau ubah apa?                      Caranya
+────────────────────────────────────────────────────────────
+Tambah kategori berita baru      → tambah entry di objek KATEGORI_CONFIG{}
+Ubah jumlah kolom grid           → ubah grid-cols-3 di bagian grid berita
+Ubah panjang ringkasan isi       → ubah angka 120 di item.isi.slice(0, 120)
+Nonaktifkan fitur pin            → hapus field pinned dari form dan kondisi tampil
+Ubah jumlah berita per halaman   → ubah limit: 9 di params fetchData
+```
+
+---
 Konfigurasi **Axios** — semua request HTTP ke backend melewati file ini.
 
 ```
@@ -536,19 +579,21 @@ Setelah daftar dan buat database, salin **connection string** ke `DATABASE_URL` 
 
 ## 9. Sistem Role & Hak Akses
 
-| Fitur                | Admin | Staff | Warga          |
-|----------------------|-------|-------|----------------|
-| Dashboard            | ✅    | ✅    | ✅             |
-| Lihat Data Penduduk  | ✅    | ✅    | ❌             |
-| Tambah/Edit Penduduk | ✅    | ✅    | ❌             |
-| Hapus Penduduk       | ✅    | ❌    | ❌             |
-| Kelola Surat         | ✅    | ✅    | ❌             |
-| Hapus Surat          | ✅    | ❌    | ❌             |
-| Ajukan Surat         | ❌    | ❌    | ✅             |
-| Pengaduan            | ✅ semua | ✅ semua | ✅ milik sendiri |
-| Update Status Pengaduan | ✅ | ✅   | ❌             |
-| Hapus Pengaduan      | ✅    | ❌    | ❌             |
-| Manajemen User       | ✅    | ❌    | ❌             |
+| Fitur                    | Admin       | Staff       | Warga              |
+|--------------------------|-------------|-------------|--------------------|
+| Dashboard                | ✅          | ✅          | ✅                 |
+| Lihat Data Penduduk      | ✅          | ✅          | ❌                 |
+| Tambah/Edit Penduduk     | ✅          | ✅          | ❌                 |
+| Hapus Penduduk           | ✅          | ❌          | ❌                 |
+| Kelola Surat             | ✅          | ✅          | ❌                 |
+| Hapus Surat              | ✅          | ❌          | ❌                 |
+| Ajukan Surat             | ❌          | ❌          | ✅                 |
+| Pengaduan                | ✅ semua    | ✅ semua    | ✅ milik sendiri   |
+| Update Status Pengaduan  | ✅          | ✅          | ❌                 |
+| Hapus Pengaduan          | ✅          | ❌          | ❌                 |
+| Baca Berita/Info Desa    | ✅          | ✅          | ✅                 |
+| Tulis/Edit/Hapus Berita  | ✅          | ✅          | ❌                 |
+| Manajemen User           | ✅          | ❌          | ❌                 |
 
 ---
 
@@ -586,13 +631,14 @@ Setelah daftar dan buat database, salin **connection string** ke `DATABASE_URL` 
 
 ## 11. Rencana Fitur Berikutnya
 
-- [x] Dashboard statistik
+- [x] Dashboard statistik + berita terbaru
 - [x] Manajemen data penduduk
 - [x] Manajemen surat keterangan
 - [x] Sistem login multi role (Admin / Staff / Warga)
 - [x] Pengaduan masyarakat + upload foto bukti
 - [x] Ajukan surat online (khusus warga)
-- [ ] Notifikasi & Pengumuman kelurahan
+- [x] Info & Berita Desa (pengumuman, bansos, kegiatan, kesehatan)
+- [ ] Notifikasi real-time (WebSocket / polling)
 - [ ] Manajemen Bantuan Sosial (BLT, sembako, dll)
 - [ ] Arsip Digital + Download PDF
 - [ ] QR Code verifikasi surat

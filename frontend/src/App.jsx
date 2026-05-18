@@ -8,13 +8,12 @@ import Surat from './pages/Surat'
 import Users from './pages/Users'
 import Pengaduan from './pages/Pengaduan'
 import AjukanSurat from './pages/AjukanSurat'
+import Berita from './pages/Berita'
 
-// Cek apakah sudah login
 function PrivateRoute({ children }) {
   return localStorage.getItem('token') ? children : <Navigate to="/login" />
 }
 
-// Hanya admin yang boleh akses
 function AdminRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (!localStorage.getItem('token')) return <Navigate to="/login" />
@@ -22,7 +21,6 @@ function AdminRoute({ children }) {
   return children
 }
 
-// Hanya admin & staff yang boleh akses
 function StaffRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (!localStorage.getItem('token')) return <Navigate to="/login" />
@@ -38,12 +36,13 @@ export default function App() {
         <Route index element={<Dashboard />} />
 
         {/* Admin & Staff */}
-        <Route path="penduduk" element={<StaffRoute><Penduduk /></StaffRoute>} />
-        <Route path="surat"    element={<StaffRoute><Surat /></StaffRoute>} />
-        <Route path="users"    element={<AdminRoute><Users /></AdminRoute>} />
+        <Route path="penduduk"  element={<StaffRoute><Penduduk /></StaffRoute>} />
+        <Route path="surat"     element={<StaffRoute><Surat /></StaffRoute>} />
+        <Route path="users"     element={<AdminRoute><Users /></AdminRoute>} />
 
         {/* Semua role */}
-        <Route path="pengaduan"    element={<Pengaduan />} />
+        <Route path="pengaduan" element={<Pengaduan />} />
+        <Route path="berita"    element={<Berita />} />
 
         {/* Khusus warga */}
         <Route path="ajukan-surat" element={<AjukanSurat />} />
