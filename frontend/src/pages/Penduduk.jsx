@@ -11,7 +11,7 @@ import Modal from '../components/Modal'
 const emptyForm = {
   nik: '', nama: '', tempatLahir: '', tanggalLahir: '', jenisKelamin: 'Laki-laki',
   agama: 'Islam', statusKawin: 'Belum Kawin', pekerjaan: '', alamat: '', rt: '', rw: '',
-  kelurahan: 'Kelurahan Contoh', kecamatan: 'Kecamatan Contoh', kota: 'Kota Contoh'
+  kelurahan: '', kecamatan: '', kota: ''
 }
 
 /*

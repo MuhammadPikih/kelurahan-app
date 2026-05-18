@@ -137,7 +137,10 @@ export default function Users() {
       setModal(null)
       fetchData()
     } catch (err) {
-      alert(err.response?.data?.message || 'Gagal menyimpan')
+      // Tampilkan pesan error spesifik dari server
+      const msg = err.response?.data?.message || err.message || 'Gagal menyimpan'
+      const status = err.response?.status || ''
+      alert(`Error ${status}: ${msg}`)
     } finally {
       setLoading(false)
     }
