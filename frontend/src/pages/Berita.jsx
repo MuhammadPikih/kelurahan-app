@@ -31,10 +31,13 @@ function KategoriBadge({ kategori }) {
 
 /*
   Komponen kartu berita di daftar.
-  Menampilkan foto sampul (kalau ada), judul, ringkasan isi,
-  kategori, penulis, dan tombol aksi.
+  Props:
+  - item       : data berita
+  - index      : urutan untuk delay animasi
+  - canManage  : boolean — true kalau user boleh edit/hapus (admin/staff)
+  - onEdit, onDelete, onDetail
 */
-function BeritaCard({ item, index, onEdit, onDelete, onDetail }) {
+function BeritaCard({ item, index, canManage, onEdit, onDelete, onDetail }) {
   return (
     <div
       className="bg-white rounded-xl shadow overflow-hidden card-hover animate-fadeInUp"
@@ -53,7 +56,6 @@ function BeritaCard({ item, index, onEdit, onDelete, onDetail }) {
         {/* Baris atas: badge kategori + pin indicator */}
         <div className="flex items-center gap-2 mb-2">
           <KategoriBadge kategori={item.kategori} />
-          {/* Ikon pin muncul kalau berita di-pin (tampil di atas) */}
           {item.pinned && (
             <span className="text-xs text-orange-500 font-medium flex items-center gap-1">
               📌 Disematkan
@@ -80,20 +82,27 @@ function BeritaCard({ item, index, onEdit, onDelete, onDetail }) {
             <span className="mx-1">·</span>
             <span>{new Date(item.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onEdit(item)}
-              className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all hover:scale-105"
-            >
-              ✏️
-            </button>
-            <button
-              onClick={() => onDelete(item.id)}
-              className="text-xs px-2 py-1 rounded bg-red-50 text-red-500 hover:bg-red-100 transition-all hover:scale-105"
-            >
-              🗑️
-            </button>
-          </div>
+          {/*
+            Tombol Edit & Hapus hanya tampil kalau canManage = true.
+            canManage dikirim dari komponen induk berdasarkan role user.
+            Warga tidak akan melihat tombol ini sama sekali.
+          */}
+          {canManage && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => onEdit(item)}
+                className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all hover:scale-105"
+              >
+                ✏️
+              </button>
+              <button
+                onClick={() => onDelete(item.id)}
+                className="text-xs px-2 py-1 rounded bg-red-50 text-red-500 hover:bg-red-100 transition-all hover:scale-105"
+              >
+                🗑️
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -141,6 +150,9 @@ export default function Berita() {
   const [fetching, setFetching]   = useState(true)
 
   const user = getUser()
+  // canManage = true hanya untuk admin dan staff
+  // Warga hanya bisa membaca berita, tidak bisa tulis/edit/hapus
+  const canManage = user.role === 'admin' || user.role === 'staff'
 
   const fetchData = useCallback(async () => {
     setFetching(true)
@@ -233,7 +245,7 @@ export default function Berita() {
           <p className="text-sm text-gray-500 mt-0.5">Pengumuman, bansos, kegiatan, dan informasi desa</p>
         </div>
         {/* Tombol tambah hanya untuk admin & staff */}
-        {(user.role === 'admin' || user.role === 'staff') && (
+        {canManage && (
           <button
             onClick={openAdd}
             className="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow hover:shadow-md btn-ripple flex items-center gap-2"
@@ -285,7 +297,7 @@ export default function Berita() {
         <div className="bg-white rounded-xl shadow p-16 text-center text-gray-400">
           <span className="text-5xl block mb-2">📰</span>
           <p className="font-medium">Belum ada berita</p>
-          {(user.role === 'admin' || user.role === 'staff') && (
+          {canManage && (
             <p className="text-sm mt-1">Klik "Tulis Berita" untuk membuat info pertama</p>
           )}
         </div>
@@ -302,6 +314,7 @@ export default function Berita() {
               key={item.id}
               item={item}
               index={i}
+              canManage={canManage}
               onEdit={openEdit}
               onDelete={handleDelete}
               onDetail={openDetail}

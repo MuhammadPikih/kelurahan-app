@@ -141,9 +141,20 @@
 }
 
 /* =============================================
+   ANIMASI PROGRESS BAR SLIDER
+   Dipakai di slider berita dashboard.
+   Bergerak dari lebar 0% ke 100% dalam durasi
+   yang sama dengan interval auto-slide (4 detik).
+   ============================================= */
+
+@keyframes progressBar {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* =============================================
    ANIMASI SPIN
    Dipakai untuk ikon loading (spinner).
-   Contoh: <span className="animate-spin" />
    ============================================= */
 
 .animate-spin {
